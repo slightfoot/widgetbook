@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:widgetbook/src/app_info/app_info.dart';
 import 'package:widgetbook/src/app_info/app_info_provider.dart';
@@ -274,10 +273,12 @@ class _WidgetbookState<CustomTheme> extends State<Widgetbook<CustomTheme>> {
   late AppInfoProvider appInfoProvider;
   late WorkbenchProvider<CustomTheme> workbenchProvider;
   late KnobsNotifier knobsNotifier;
-  late GoRouter goRouter;
+  late RouteFactory? routeFactory;
 
   @override
   void initState() {
+    super.initState();
+
     organizerProvider = OrganizerProvider(
       state: OrganizerState.unfiltered(categories: widget.categories),
       storyRepository: storyRepository,
@@ -295,16 +296,18 @@ class _WidgetbookState<CustomTheme> extends State<Widgetbook<CustomTheme>> {
       frames: widget.frames,
       textScaleFactors: widget.textScaleFactors,
     );
-    goRouter = createRouter(
+
+    routeFactory = createRouteFactory(
+      context: context,
       workbenchProvider: workbenchProvider,
       previewProvider: previewProvider,
     );
-
-    super.initState();
   }
 
   @override
   void didUpdateWidget(covariant Widgetbook<CustomTheme> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
     organizerProvider.hotReload(widget.categories);
     workbenchProvider.hotReload(
       themes: widget.themes,
@@ -314,7 +317,6 @@ class _WidgetbookState<CustomTheme> extends State<Widgetbook<CustomTheme>> {
       textScaleFactors: widget.textScaleFactors,
     );
     appInfoProvider.hotReload(widget.appInfo);
-    super.didUpdateWidget(oldWidget);
   }
 
   @override
@@ -360,14 +362,13 @@ class _WidgetbookState<CustomTheme> extends State<Widgetbook<CustomTheme>> {
         ChangeNotifierProvider.value(value: previewProvider),
         ChangeNotifierProvider.value(value: appInfoProvider),
       ],
-      child: MaterialApp.router(
-        routeInformationParser: goRouter.routeInformationParser,
-        routerDelegate: goRouter.routerDelegate,
+      child: MaterialApp(
         title: widget.appInfo.name,
         themeMode: ThemeMode.dark,
         debugShowCheckedModeBanner: false,
         darkTheme: Styles.darkTheme,
         theme: Styles.lightTheme,
+        onGenerateRoute: routeFactory,
       ),
     );
   }
